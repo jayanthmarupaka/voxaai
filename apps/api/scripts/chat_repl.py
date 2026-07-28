@@ -27,6 +27,7 @@ SCRIPTS: dict[str, list[str]] = {
     "book": [
         "Hi, can I book a check-up?",
         "Tuesday morning would be great",
+        "9:15 works for me",
         "My name is Priya Nair and my email is priya@example.com",
     ],
     "question": [

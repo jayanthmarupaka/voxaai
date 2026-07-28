@@ -10,7 +10,6 @@ businesses and asserting across them.
 
 from __future__ import annotations
 
-import asyncio
 import os
 import uuid
 from collections.abc import AsyncIterator
@@ -31,11 +30,8 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "llm: requires live Azure OpenAI credentials")
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# Probed once per run; the loop that did the probing is gone by the next test.
+_REACHABLE: bool | None = None
 
 
 async def _database_reachable() -> bool:
@@ -47,12 +43,24 @@ async def _database_reachable() -> bool:
         return False
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def database_available() -> bool:
-    available = await _database_reachable()
-    if not available:
+    """Function-scoped on purpose: an async fixture may not outlive its event
+    loop, and the loop scope is per-function."""
+    global _REACHABLE
+    if _REACHABLE is None:
+        _REACHABLE = await _database_reachable()
+    if not _REACHABLE:
         pytest.skip("No database reachable at DATABASE_URL; skipping database tests.")
-    return available
+    return _REACHABLE
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _dispose_engine() -> AsyncIterator[None]:
+    """Every test runs on a fresh event loop, and an asyncpg connection is bound
+    to the loop that opened it — so the pool must be emptied between tests."""
+    yield
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture

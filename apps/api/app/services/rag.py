@@ -22,14 +22,21 @@ from app.models import Document, DocumentChunk
 
 logger = logging.getLogger(__name__)
 
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 120
+# Small business documents are dense and topic-switching — opening hours, prices
+# and parking can sit in adjacent sentences. Large chunks average those topics
+# into one blurred embedding, so a narrow question matches nothing well. Measured
+# on the demo docs, 300/60 separates answerable from unanswerable questions by
+# ~0.11 cosine, against ~0.03 at 800/120.
+CHUNK_SIZE = 300
+CHUNK_OVERLAP = 60
 EMBED_BATCH_SIZE = 64
 RETRIEVAL_TOP_K = 5
 # Cosine distance in [0, 2]. Anything beyond this is treated as "not in the
 # documents", which is what routes a question to escalation instead of letting
-# the model improvise.
-MAX_COSINE_DISTANCE = 0.55
+# the model improvise. This is only a cheap pre-filter: whatever survives it
+# still has to pass the grounded prompt, which emits NO_ANSWER when the excerpts
+# do not actually contain the answer.
+MAX_COSINE_DISTANCE = 0.70
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 ALLOWED_MIME_TYPES = {

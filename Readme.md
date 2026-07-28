@@ -170,6 +170,44 @@ python -m scripts.chat_repl <business-id> --script escalate
 The API starts and serves text mode without the voice, Google or SMTP settings.
 `GET /health` reports exactly which integrations are configured.
 
+Leave optional keys **empty** rather than as placeholder strings — the code
+treats empty as "not configured" and degrades cleanly, whereas a fake
+`whsec_...` reaches Svix and fails signature verification with a misleading 401.
+
+### Where each credential comes from
+
+**Neon** (`DATABASE_URL`) — create a free project at
+[neon.tech](https://neon.tech), then copy the **pooled** connection string from
+*Connection Details*. Paste it exactly as Neon gives it; `app/config.py`
+rewrites the scheme to `postgresql+asyncpg://` and strips the libpq-only
+`sslmode` / `channel_binding` parameters that asyncpg rejects. TLS is still
+applied — `app/db.py` enables it for any non-localhost host. The `vector`
+extension is created by the first migration.
+
+**Clerk** (`CLERK_*`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`) — create an
+application, then **Configure → Organizations → Enable**; without this there is
+no `org_id` claim and every authenticated request is rejected by design.
+*API Keys* gives the publishable and secret keys. `CLERK_ISSUER` is the
+**Frontend API URL** (`https://<slug>.clerk.accounts.dev`, no trailing slash) —
+`app/deps.py` appends `/.well-known/jwks.json` to it and also checks it as the
+`iss` claim, so it must match exactly. `CLERK_WEBHOOK_SECRET` is only needed if
+you expose a public webhook endpoint; leave it empty locally.
+
+**Google Calendar** (`GOOGLE_CLIENT_ID/SECRET`) — in Google Cloud Console:
+enable the **Google Calendar API**, configure the OAuth consent screen as
+*External*, add the `calendar.events` and `calendar.readonly` scopes, add
+yourself as a **test user**, then create an *OAuth client ID → Web application*
+whose authorised redirect URI is exactly `GOOGLE_REDIRECT_URI`. Note that while
+the consent screen is in *Testing*, Google expires refresh tokens after seven
+days, so a long-lived demo needs the app published.
+
+**Gmail SMTP** (`SMTP_*`) — requires 2-Step Verification, then an
+[App Password](https://myaccount.google.com/apppasswords); your normal password
+will not authenticate.
+
+**`TOKEN_ENCRYPTION_KEY`** — generate with
+`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+
 ## Tests
 
 ```bash
