@@ -1,0 +1,48 @@
+# Lower bounds only; run `pip freeze > requirements.lock.txt` after install for
+# reproducible deploys.
+
+# --- Web framework -----------------------------------------------------------
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.18
+slowapi>=0.1.9
+
+# --- Config / validation -----------------------------------------------------
+pydantic>=2.9
+pydantic-settings>=2.6
+
+# --- Database ----------------------------------------------------------------
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30
+alembic>=1.14
+pgvector>=0.3.6
+greenlet>=3.1
+
+# --- Auth / crypto -----------------------------------------------------------
+pyjwt[crypto]>=2.10
+cryptography>=44.0
+svix>=1.44
+
+# --- LLM / orchestration -----------------------------------------------------
+openai>=1.60
+langgraph>=0.2.60
+langchain-core>=0.3.29
+
+# --- Google Calendar ---------------------------------------------------------
+google-api-python-client>=2.150
+google-auth>=2.36
+google-auth-oauthlib>=1.2
+
+# --- Documents ---------------------------------------------------------------
+pypdf>=5.1
+
+# --- Notifications -----------------------------------------------------------
+aiosmtplib>=3.0
+
+# --- HTTP client -------------------------------------------------------------
+httpx>=0.28
+
+# --- Timezones ---------------------------------------------------------------
+# Windows (and slim Linux images) ship no system tz database, so `zoneinfo`
+# raises ZoneInfoNotFoundError without this.
+tzdata>=2024.2

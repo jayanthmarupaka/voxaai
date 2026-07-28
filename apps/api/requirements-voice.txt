@@ -1,0 +1,6 @@
+# Speech stack — kept separate from requirements.txt because these pull large
+# native wheels (CTranslate2, onnxruntime, PyAV) and model files. The API starts
+# and serves text mode fine without them; the voice WebSocket reports a clear
+# "voice disabled" error instead of crashing.
+faster-whisper>=1.1
+piper-tts>=1.3

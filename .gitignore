@@ -1,0 +1,32 @@
+# ---- Secrets -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# ---- Node --------------------------------------------------------------------
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Speech models (downloaded at build/first run, never committed) ----------
+models/
+apps/api/models/
+
+# ---- Misc --------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

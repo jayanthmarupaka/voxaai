@@ -1,0 +1,77 @@
+# Render blueprint. The free plan gives 512MB RAM and spins down when idle, so
+# the API runs the smallest Whisper model — see WHISPER_MODEL below.
+services:
+  - type: web
+    name: voxa-api
+    runtime: docker
+    plan: free
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Neon connection string
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: AZURE_OPENAI_CHAT_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_EMBEDDING_DEPLOYMENT
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_ISSUER
+        sync: false
+      - key: CLERK_WEBHOOK_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        generateValue: false
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: WEB_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # tiny.en fits in 512MB; base.en does not reliably.
+      - key: WHISPER_MODEL
+        value: tiny.en
+      - key: WHISPER_COMPUTE_TYPE
+        value: int8
+      - key: PIPER_VOICE
+        value: en_US-lessac-medium
+      - key: VOICE_MODELS_DIR
+        value: /models
+
+  - type: web
+    name: voxa-web
+    runtime: docker
+    plan: free
+    rootDir: apps/web
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_WS_URL
+        sync: false
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
