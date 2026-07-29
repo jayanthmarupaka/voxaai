@@ -8,8 +8,10 @@ from zoneinfo import ZoneInfo
 from app.agents.speech import (
     normalise_for_speech,
     spoken_date,
+    spoken_day_phrase,
     spoken_list,
     spoken_time,
+    spoken_when,
 )
 from app.services.rag import chunk_text
 from app.services.tts import split_sentences
@@ -43,6 +45,16 @@ def test_dates_use_relative_words_when_close():
 def test_ordinals_handle_the_teens():
     today = datetime(2026, 8, 1, 9, 0, tzinfo=UTC)
     assert "11th" in spoken_date(today.replace(day=11), TZ, today=today)
+
+
+def test_relative_days_never_get_a_preposition():
+    """"on today" is not English — the agent said it before this was fixed."""
+    today = datetime(2026, 8, 3, 9, 0, tzinfo=UTC)
+    assert spoken_day_phrase(today, TZ, today=today) == "today"
+    assert spoken_day_phrase(today.replace(day=4), TZ, today=today) == "tomorrow"
+    assert spoken_day_phrase(today.replace(day=6), TZ, today=today) == "on Thursday"
+    assert spoken_when(today, TZ, today=today) == "today at 9 AM"
+    assert spoken_when(today.replace(day=6), TZ, today=today) == "on Thursday at 9 AM"
     assert "12th" in spoken_date(today.replace(day=12), TZ, today=today)
     assert "13th" in spoken_date(today.replace(day=13), TZ, today=today)
     assert "21st" in spoken_date(today.replace(day=21), TZ, today=today)

@@ -56,6 +56,22 @@ def spoken_datetime(moment: datetime, tz: ZoneInfo, *, today: datetime | None = 
     return f"{spoken_date(moment, tz, today=today)} at {spoken_time(moment, tz)}"
 
 
+def spoken_day_phrase(moment: datetime, tz: ZoneInfo, *, today: datetime | None = None) -> str:
+    """The date as it should follow a verb: 'today', 'on Thursday'.
+
+    ``spoken_date`` returns a bare 'today'/'tomorrow', so callers that write
+    "booked in ... on {date}" produce "on today". This adds the preposition
+    only where English wants one.
+    """
+    spoken = spoken_date(moment, tz, today=today)
+    return spoken if spoken in {"today", "tomorrow"} else f"on {spoken}"
+
+
+def spoken_when(moment: datetime, tz: ZoneInfo, *, today: datetime | None = None) -> str:
+    """'today at 9 AM' / 'on Thursday at 9 AM'."""
+    return f"{spoken_day_phrase(moment, tz, today=today)} at {spoken_time(moment, tz)}"
+
+
 def spoken_list(items: list[str]) -> str:
     """'a', 'a or b', 'a, b, or c'."""
     if not items:

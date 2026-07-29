@@ -62,7 +62,7 @@ jobs:
 
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: npx eslint src
+      - run: npx eslint src scripts
       # Build with placeholder public config. No page is prerendered against a
       # real backend, so these only need to exist.
       - run: npm run build

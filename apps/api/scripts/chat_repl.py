@@ -34,6 +34,14 @@ SCRIPTS: dict[str, list[str]] = {
         "How much is a hygienist appointment?",
         "And do you have parking?",
     ],
+    "vague": [
+        # The caller never volunteers a concrete time, so the agent has to ask
+        # again without parroting itself.
+        "Hi, I'd like to book a check-up",
+        "Sometime in the morning would be nice",
+        "My name is Priya Nair",
+        "The first one you said is fine",
+    ],
     "escalate": [
         "I want to complain about the treatment I had last week and get a refund.",
     ],

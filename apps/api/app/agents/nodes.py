@@ -17,8 +17,10 @@ from pydantic import BaseModel, Field
 from app.agents.speech import (
     normalise_for_speech,
     spoken_datetime,
+    spoken_day_phrase,
     spoken_list,
     spoken_time,
+    spoken_when,
 )
 from app.agents.state import AgentContext, VoxaState, get_context
 from app.llm import complete, complete_structured
@@ -71,6 +73,14 @@ def _transcript(state: VoxaState) -> str:
     ]
     lines.append(f"customer: {state.get('user_message', '')}")
     return "\n".join(lines)
+
+
+def _last_assistant(state: VoxaState) -> str:
+    """The most recent thing we said, used to avoid repeating ourselves verbatim."""
+    for turn in reversed(state.get("history", [])):
+        if turn.get("role") == "assistant":
+            return (turn.get("content") or "").strip()
+    return ""
 
 
 def _business_brief(ctx: AgentContext) -> str:
@@ -286,6 +296,9 @@ async def _handle_book(
                 "kind": "need_time",
                 "suggestions": [slot.isoformat() for slot in slots],
                 "day": known.get("date"),
+                # Passed through so the reply can acknowledge details the caller
+                # has already given us instead of blankly re-asking.
+                "customer_name": known.get("customer_name"),
             },
             "outcome": "in_progress",
         }
@@ -521,6 +534,9 @@ async def response_compiler(state: VoxaState, config: RunnableConfig) -> dict[st
     def when(iso: str) -> str:
         return spoken_datetime(datetime.fromisoformat(iso), tz)
 
+    def when_phrase(iso: str) -> str:
+        return spoken_when(datetime.fromisoformat(iso), tz)
+
     if kind is None:
         # smalltalk — the only branch that goes straight from the router here.
         try:
@@ -543,7 +559,7 @@ async def response_compiler(state: VoxaState, config: RunnableConfig) -> dict[st
     if kind == "booked":
         text = f"You're booked in for {when(result['start'])}."
         if result.get("service"):
-            text = f"You're booked in for {result['service']} on {when(result['start'])}."
+            text = f"You're booked in for {result['service']} {when_phrase(result['start'])}."
         text += (
             " I've sent you a confirmation by email."
             if result.get("has_email")
@@ -561,30 +577,51 @@ async def response_compiler(state: VoxaState, config: RunnableConfig) -> dict[st
     if kind == "cancelled":
         return {
             "response_text": normalise_for_speech(
-                f"Your appointment on {when(result['start'])} is cancelled. "
+                f"Your appointment {when_phrase(result['start'])} is cancelled. "
                 "Let me know if you'd like to book another time."
             )
         }
 
     if kind == "need_time":
+        previous = _last_assistant(state)
         suggestions = [datetime.fromisoformat(iso) for iso in result.get("suggestions", [])]
+
+        # If the caller has just told us their name, lead with it. Otherwise a
+        # second ask for a time sounds like we ignored what they said.
+        prefix = ""
+        name = str(result.get("customer_name") or "").strip()
+        if name and name.split()[0].lower() not in previous.lower():
+            prefix = f"Thanks, {name.split()[0]}. "
+
         if not suggestions:
             return {
                 "response_text": normalise_for_speech(
-                    "I don't have anything free around then. What other day works for you?"
+                    f"{prefix}I don't have anything free around then. "
+                    "What other day works for you?"
                 )
             }
         same_day = len({slot.astimezone(tz).date() for slot in suggestions}) == 1
         if same_day:
             times = spoken_list([spoken_time(slot, tz) for slot in suggestions])
-            day = spoken_datetime(suggestions[0], tz).split(" at ")[0]
-            text = f"I have {times} on {day}. Which suits you?"
+            day = spoken_day_phrase(suggestions[0], tz)
+            text = f"{prefix}I have {times} {day}. Which suits you?"
         else:
             text = (
-                f"The next available times are {spoken_list([when(s.isoformat()) for s in suggestions])}. "
+                f"{prefix}The next available times are "
+                f"{spoken_list([when(s.isoformat()) for s in suggestions])}. "
                 "Which would you like?"
             )
-        return {"response_text": normalise_for_speech(text)}
+
+        spoken = normalise_for_speech(text)
+        if spoken == previous:
+            # We already offered exactly these times and got no usable answer.
+            # Repeating verbatim makes the bot sound stuck, so narrow to a single
+            # concrete time the caller can simply accept.
+            spoken = normalise_for_speech(
+                f"Sorry, I didn't catch a time. Shall I put you down for "
+                f"{spoken_time(suggestions[0], tz)}, or would another time suit you better?"
+            )
+        return {"response_text": spoken}
 
     if kind == "need_name":
         return {

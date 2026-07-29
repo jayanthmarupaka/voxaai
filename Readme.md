@@ -128,6 +128,14 @@ cd apps/api
 python -m scripts.chat_repl <business-id> --script book
 python -m scripts.chat_repl <business-id> --script question
 python -m scripts.chat_repl <business-id> --script escalate
+python -m scripts.chat_repl <business-id> --script vague      # never names a time
+```
+
+To exercise the voice websocket without a microphone, which round-trips Piper's
+own output back through Whisper:
+
+```bash
+python -m scripts.voice_smoke <business-id>   # needs the API running
 ```
 
 ### Configuration
@@ -150,6 +158,14 @@ The API starts and serves text mode without the voice, Google or SMTP settings.
 Leave optional keys **empty** rather than as placeholder strings — the code
 treats empty as "not configured" and degrades cleanly, whereas a fake
 `whsec_...` reaches Svix and fails signature verification with a misleading 401.
+
+There is a single `.env` at the repo root. Next.js only looks for `.env` files
+inside `apps/web`, so the npm scripts go through `scripts/with-root-env.mjs`,
+which loads the root file *before* spawning Next. Doing this from
+`next.config.ts` instead is too late: Next has already resolved its environment,
+and `@clerk/nextjs` quietly starts a throwaway **keyless** instance rather than
+using your keys. If you ever see a "claim your keys" prompt in the corner of the
+page, that is what has happened.
 
 ### Where each credential comes from
 

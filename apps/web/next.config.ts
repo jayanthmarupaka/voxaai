@@ -1,10 +1,9 @@
-import path from "node:path";
-import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 
-// One .env at the repo root serves the API, the web app and docker-compose.
-loadEnvConfig(path.resolve(process.cwd(), "../.."), process.env.NODE_ENV !== "production");
-
+// The single repo-root .env is loaded by `node --env-file-if-exists` in the npm
+// scripts, not here: Next caches its env before next.config.ts is evaluated, so
+// loading it at this point is too late and Clerk silently falls back to keyless
+// mode with a throwaway instance.
 const nextConfig: NextConfig = {
   // Produces .next/standalone, which is what the Dockerfile ships.
   output: "standalone",
