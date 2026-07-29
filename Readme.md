@@ -44,30 +44,7 @@ guardrails that make each one hold.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    Caller[Customer<br/>browser mic] -->|WebSocket audio| WS[FastAPI /ws/voice]
-    WS --> STT[faster-whisper<br/>CPU]
-    STT --> Graph
-    Caller -->|typed| REST[POST /api/public/.../chat] --> Graph
-
-    subgraph Graph[LangGraph agent]
-        Router[intent_router] -->|book / reschedule / cancel| Cal[calendar_agent]
-        Router -->|question| RAG[rag_agent]
-        Router -->|escalate| Esc[escalation_agent]
-        Router -->|smalltalk| Comp[response_compiler]
-        RAG -->|grounded| Comp
-        RAG -->|no answer| Esc
-        Cal --> Comp
-        Esc --> Comp
-    end
-
-    Cal <--> GCal[(Google Calendar)]
-    RAG <--> PG[(Postgres + pgvector)]
-    Esc --> PG
-    Comp --> TTS[Piper] --> Caller
-    Comp --> Dash[Owner dashboard<br/>Next.js + Clerk]
-```
+![alt text](voxa-architecture.png)
 
 **Stack:** FastAPI · LangGraph · Azure OpenAI (GPT-4.1 + embeddings) ·
 Postgres/pgvector (Neon) · faster-whisper · Piper · Next.js 16 · Clerk
