@@ -239,7 +239,7 @@ streaming partial transcripts once a GPU is available; SMS confirmations;
 per-business analytics on deflection rate; multi-language via Whisper's
 multilingual models and per-locale Piper voices.
 
-# update readme
+
 
 ## Licence note
 
